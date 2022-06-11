@@ -1,1 +1,3 @@
 # check-mail
+
+init
