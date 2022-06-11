@@ -1,0 +1,126 @@
+<project name="check-mail" default="compile" basedir=".">
+
+  <property name="project.name" value="check-mail"/>
+  <property name="project.vendor" value="Julio Leite"/>
+  <property name="project.client.vendor" value="${project.vendor}"/>
+  <property name="version" value="1.8"/>
+  <tstamp>
+    <format property="touch.time" pattern="yyMMddHHmm" offset="0"/>
+    <format property="touch.year" pattern="yyyy" offset="0"/>
+  </tstamp>
+  <property name="app.version" value="${version}.${touch.time}"/>
+  <property name="app.name" value="${project.name}"/>
+	
+  <property name="dir.java" location="${basedir}/src"/>
+  <property name="dir.jar" location="${basedir}/jar"/>
+  <property name="dir.lib" location="${basedir}/lib"/>
+  <property name="dir.classes" location="${basedir}/classes"/>
+  <property name="dir.dist" location="${basedir}/dist"/>
+  
+  <property name="app.jar" value="${dir.jar}/${app.name}.jar"/>
+  <property name="release.zip" value="${basedir}/release.zip"/>
+  
+  <target name="clean" description="Clean the output directory (start from scratch)">
+    <delete includeemptydirs="true">
+      <fileset dir="${dir.classes}" includes="**/*"/>
+      <fileset dir="${dir.jar}" includes="**/*"/>
+    </delete>
+    <delete includeemptydirs="true">
+      <fileset dir="${dir.dist}" includes="**/*.jar"/>
+    </delete>
+    <delete>
+      <fileset dir="${basedir}">
+        <include name="release*"/>
+      </fileset>
+    </delete>
+  </target>
+
+  <target name="init">
+    <mkdir dir="${dir.classes}"/>
+    <mkdir dir="${dir.jar}"/>
+    <mkdir dir="${dir.lib}"/>
+    <mkdir dir="${dir.dist}"/>
+  </target>
+
+  <!-- Configure Lib classpath -->
+  <path id="classpath.app">
+    <fileset dir="${dir.lib}">
+      <include name="**/*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="compile" depends="init" description="Compile the application">
+    <javac 
+    		srcdir="${dir.java}" 
+    		destdir="${dir.classes}" 
+    		source="11" 
+    		target="11" 
+    		includeAntRuntime="false" 
+    		debug="off"
+    		debuglevel="none"
+    		verbose="off">
+        <classpath refid="classpath.app"/>
+    </javac>
+  </target>
+
+  <pathconvert property="manifest.classpath" pathsep=" ">
+    <path refid="classpath.app"/>
+    <mapper>
+      <chainedmapper>
+        <flattenmapper/>
+        <globmapper from="*.jar" to="lib/*.jar"/>
+      </chainedmapper>
+    </mapper>
+  </pathconvert>
+
+  <target name="package_jar" depends="compile" description="build the application jar">
+    <jar jarfile="${app.jar}" duplicate="fail">
+      <manifest>
+      <attribute name="Main-Class" value="leitej.mail.Checker"/>
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Class-Path" value="${manifest.classpath}"/>
+      <section name="project">
+        <attribute name="Specification-Title" value="${project.name}"/>
+        <attribute name="Specification-Version" value="${version}"/>
+        <attribute name="Specification-Vendor" value="${project.client.vendor}"/>
+        <attribute name="Implementation-Title" value="${app.name}"/>
+        <attribute name="Implementation-Version" value="${app.version}"/> 
+        <attribute name="Implementation-Vendor" value="${project.vendor}"/>
+      </section>
+      <section name="jvm">
+        <attribute name="JVM_implementation_name" value="${java.vm.name}"/>
+        <attribute name="JVM_implementation_version" value="${java.vm.version}"/>
+        <attribute name="JVM_implementation_vendor" value="${java.vm.vendor}"/>
+      </section>
+      <section name="machine">
+        <attribute name="JRE_version" value="${java.version}"/>
+        <attribute name="Operating_system_name" value="${os.name}"/>
+        <attribute name="Operating_system_architecture" value="${os.arch}"/>
+        <attribute name="Operating_system_version" value="${os.version}"/>
+      </section>
+      </manifest>
+      <fileset file="LICENSE" />
+      <fileset dir="${dir.classes}">
+        <exclude name="test*/**"/>
+      </fileset>
+    </jar>
+  </target>
+
+  <target name="distribute" depends="package_jar" description="copy the application jar to dist, after clean it">
+    <copy file="${app.jar}" todir="${dir.dist}"/>
+    <copy todir="${dir.dist}">
+      <fileset dir="${dir.lib}">
+        <include name="**/*.jar"/>
+      </fileset>
+      <mapper>
+        <chainedmapper>
+          <flattenmapper/>
+          <globmapper from="*.jar" to="lib/*.jar"/>
+        </chainedmapper>
+      </mapper>
+    </copy>
+    <zip destfile="${release.zip}" basedir="${dir.dist}" update="true" >
+    </zip>
+  </target>
+    
+</project>
