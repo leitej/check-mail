@@ -104,7 +104,7 @@ final class MailConnection {
 	}
 
 	final boolean isInactive() {
-		return this.isInactive;
+		return this.socket.isClosed() || this.isInactive;
 	}
 
 	final void close() throws IOException {

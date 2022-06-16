@@ -111,6 +111,7 @@ public final class Checker {
 	}
 
 	public static final void stop() throws InterruptedException, ObjectPoolLtException {
+		LOG.debug("init");
 		synchronized (Checker.class) {
 			if (!STOPPED) {
 				STOPPED = true;
@@ -126,6 +127,7 @@ public final class Checker {
 	}
 
 	public static final void start() throws InterruptedException {
+		LOG.debug("init");
 		synchronized (Checker.class) {
 			if (STOPPED) {
 				STOPPED = false;
@@ -143,6 +145,7 @@ public final class Checker {
 	}
 
 	public static final void refresh() throws InterruptedException {
+		LOG.debug("init");
 		if (!STOPPED) {
 			MailConnection conn = null;
 			try {
@@ -164,6 +167,7 @@ public final class Checker {
 			} catch (final Exception e) {
 				LOG.error("#0", e);
 			} finally {
+				LOG.debug("finally");
 				if (conn != null) {
 					MAIL_CONN_POOL.offer(conn);
 				}
@@ -172,6 +176,7 @@ public final class Checker {
 	}
 
 	public static final void quit() {
+		LOG.debug("init");
 		XA_THREAD.closeAsync();
 	}
 

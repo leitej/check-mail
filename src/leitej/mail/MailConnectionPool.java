@@ -47,8 +47,8 @@ final class MailConnectionPool extends AbstractObjectPool<MailConnection> {
 	@Override
 	protected MailConnection newObject() throws ObjectPoolLtException {
 		try {
-			return new MailConnection(
-					(SSLSocket) this.factory.createSocket(this.config.getHostname(), this.config.getPort()),
+			LOG.debug("connecting");
+			return new MailConnection((SSLSocket) this.factory.createSocket(this.config.getHostname(), this.config.getPort()),
 					this.config.getUsername(), this.config.getPassword());
 		} catch (final IOException e) {
 			throw new ObjectPoolLtException("#0", e);
@@ -63,6 +63,7 @@ final class MailConnectionPool extends AbstractObjectPool<MailConnection> {
 	@Override
 	protected void deactivate(final MailConnection obj) {
 		try {
+			LOG.debug("closing");
 			obj.close();
 		} catch (final IOException e) {
 			LOG.error("#0", e);
@@ -81,6 +82,7 @@ final class MailConnectionPool extends AbstractObjectPool<MailConnection> {
 
 	@Override
 	protected synchronized void close() throws ObjectPoolLtException {
+		LOG.debug("closing");
 		super.close();
 	}
 
