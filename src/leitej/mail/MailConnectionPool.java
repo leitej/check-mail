@@ -17,6 +17,7 @@ package leitej.mail;
 
 import java.io.IOException;
 
+import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -36,12 +37,16 @@ final class MailConnectionPool extends AbstractObjectPool<MailConnection> {
 	private static final Logger LOG = Logger.getInstance();
 
 	private final Config config;
-	private final SSLSocketFactory factory;
+	private final SocketFactory factory;
 
 	protected MailConnectionPool(final Config config) throws IllegalArgumentException {
 		super(config.getMaxConnections());
 		this.config = config;
-		this.factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+		if (config.getStartTLS() == null || !config.getStartTLS().booleanValue()) {
+			this.factory = SSLSocketFactory.getDefault();
+		} else {
+			this.factory = StartTLSSocketFactory.getDefault();
+		}
 	}
 
 	@Override

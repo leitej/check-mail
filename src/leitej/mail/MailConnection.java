@@ -25,7 +25,6 @@ import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 
-import leitej.exception.IllegalStateLtRtException;
 import leitej.log.Logger;
 
 /**
@@ -76,16 +75,17 @@ final class MailConnection {
 	private String readSocket() throws IOException {
 		String result = null;
 		String inputLine;
-		while ((inputLine = this.input.readLine()) != null && !inputLine.contains("Success")) {
+		while ((inputLine = this.input.readLine()) != null
+				&& !(inputLine.contains("Success") || inputLine.contains("tag OK"))) {
 			LOG.trace("#0", inputLine);
 			if (inputLine.startsWith("*")) {
 				result = inputLine;
 			}
 		}
 		LOG.trace("#0", inputLine);
-		if (result == null || !inputLine.contains("Success")) {
-			throw new IllegalStateLtRtException();
-		}
+//		if (result == null || !inputLine.contains("Success")) {
+//			throw new IllegalStateLtRtException();
+//		}
 		LOG.debug("result: #0", result);
 		return result;
 	}

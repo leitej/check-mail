@@ -32,6 +32,10 @@ public interface Config extends XmlObjectModelling {
 
 	void setPort(int port);
 
+	Boolean getStartTLS();
+
+	void setStartTLS(Boolean startTLS);
+
 	String getUsername();
 
 	void setUsername(String username);
@@ -60,5 +64,9 @@ public interface Config extends XmlObjectModelling {
 	String getHasMailIcon();
 
 	void setHasMailIcon(String hasMailIcon);
+
+	boolean isDisableTrayIcon();
+
+	void setDisableTrayIcon(boolean disableTrayIcon);
 
 }

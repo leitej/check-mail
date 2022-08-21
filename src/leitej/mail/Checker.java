@@ -46,6 +46,7 @@ public final class Checker {
 	private static final Config CONFIG;
 	private static MailConnectionPool MAIL_CONN_POOL;
 	private static final XAgnosticThread XA_THREAD;
+	private static final boolean USE_TRAY_ICON;
 	private static final LtTrayIcon TRAY_ICON;
 	private static final String METHOD_STOP = "stop";
 	private static final String METHOD_START = "start";
@@ -69,23 +70,29 @@ public final class Checker {
 					| IOException e) {
 				throw new SeppukuLtRtException(e);
 			}
+			//
+			USE_TRAY_ICON = !CONFIG.isDisableTrayIcon();
 			// set icons locations
 			ICON_STOPPED = CONFIG.getStoppedIcon();
 			ICON_NO_MAIL = CONFIG.getNoMailIcon();
 			ICON_HAS_MAIL = CONFIG.getHasMailIcon();
 			// system tray icon
-			TRAY_ICON = new LtTrayIcon("check-mail");
-			TRAY_ICON.registerImage(ICON_STOPPED, ICON_STOPPED);
-			TRAY_ICON.registerImage(ICON_NO_MAIL, ICON_NO_MAIL);
-			TRAY_ICON.registerImage(ICON_HAS_MAIL, ICON_HAS_MAIL);
-			TRAY_ICON.activeImage(ICON_STOPPED);
-			TRAY_ICON.addMenuItem("stop",
-					new InvokeSignature(Checker.class, AgnosticUtil.getMethod(Checker.class, METHOD_STOP)));
-			TRAY_ICON.addMenuItem("quit",
-					new InvokeSignature(Checker.class, AgnosticUtil.getMethod(Checker.class, METHOD_QUIT)));
-			TRAY_ICON
-					.setActionListener(new InvokeSignature(Checker.class, AgnosticUtil.getMethod(Checker.class, METHOD_START)));
-			TRAY_ICON.unhide();
+			if (USE_TRAY_ICON) {
+				TRAY_ICON = new LtTrayIcon("check-mail");
+				TRAY_ICON.registerImage(ICON_STOPPED, ICON_STOPPED);
+				TRAY_ICON.registerImage(ICON_NO_MAIL, ICON_NO_MAIL);
+				TRAY_ICON.registerImage(ICON_HAS_MAIL, ICON_HAS_MAIL);
+				TRAY_ICON.activeImage(ICON_STOPPED);
+				TRAY_ICON.addMenuItem("stop",
+						new InvokeSignature(Checker.class, AgnosticUtil.getMethod(Checker.class, METHOD_STOP)));
+				TRAY_ICON.addMenuItem("quit",
+						new InvokeSignature(Checker.class, AgnosticUtil.getMethod(Checker.class, METHOD_QUIT)));
+				TRAY_ICON
+						.setActionListener(new InvokeSignature(Checker.class, AgnosticUtil.getMethod(Checker.class, METHOD_START)));
+				TRAY_ICON.unhide();
+			} else {
+				TRAY_ICON = null;
+			}
 			// load scheduled refresh method
 			XA_THREAD.workOn(new XThreadData(new Invoke(Checker.class, AgnosticUtil.getMethod(Checker.class, METHOD_REFRESH)),
 					new TimeTriggerImpl(DateFieldEnum.SECOND, Long.valueOf(CONFIG.getRefreshIntervalMS() / 1000).intValue()),
@@ -117,7 +124,9 @@ public final class Checker {
 				STOPPED = true;
 				MAIL_CONN_POOL.close();
 				try {
-					TRAY_ICON.activeImage(ICON_STOPPED);
+					if (USE_TRAY_ICON) {
+						TRAY_ICON.activeImage(ICON_STOPPED);
+					}
 				} catch (final GuiLtException e) {
 					LOG.error("#0", e);
 				}
@@ -133,7 +142,9 @@ public final class Checker {
 				STOPPED = false;
 				MAIL_CONN_POOL = new MailConnectionPool(CONFIG);
 				try {
-					TRAY_ICON.activeImage(ICON_NO_MAIL);
+					if (USE_TRAY_ICON) {
+						TRAY_ICON.activeImage(ICON_NO_MAIL);
+					}
 				} catch (final GuiLtException e) {
 					LOG.error("#0", e);
 				}
@@ -152,15 +163,15 @@ public final class Checker {
 				conn = MAIL_CONN_POOL.poll();
 				synchronized (Checker.class) {
 					final boolean hasMail = conn.hasUnread();
-					LOG.debug("hasUnread: #0", hasMail);
-					if (HAS_MAIL != hasMail) {
-						HAS_MAIL = hasMail;
-						if (HAS_MAIL) {
-							TRAY_ICON.activeImage(ICON_HAS_MAIL);
-							LOG.info("has_mail");
-						} else {
-							TRAY_ICON.activeImage(ICON_NO_MAIL);
-							LOG.info("no_mail");
+					LOG.info("hasUnread: #0", hasMail);
+					if (USE_TRAY_ICON) {
+						if (HAS_MAIL != hasMail) {
+							HAS_MAIL = hasMail;
+							if (HAS_MAIL) {
+								TRAY_ICON.activeImage(ICON_HAS_MAIL);
+							} else {
+								TRAY_ICON.activeImage(ICON_NO_MAIL);
+							}
 						}
 					}
 				}
@@ -185,6 +196,9 @@ public final class Checker {
 	 */
 	public static void main(final String[] args) {
 		try {
+			if (!USE_TRAY_ICON) {
+				start();
+			}
 			LOG.info("join");
 			XA_THREAD.join();
 		} catch (final Exception e) {
@@ -193,7 +207,9 @@ public final class Checker {
 			LOG.debug("finally");
 			try {
 				LOG.debug("close");
-				TRAY_ICON.close();
+				if (USE_TRAY_ICON) {
+					TRAY_ICON.close();
+				}
 				stop();
 			} catch (final GuiLtException | InterruptedException | ObjectPoolLtException e) {
 				LOG.error("#0", e);
